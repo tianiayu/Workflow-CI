@@ -1,0 +1,15 @@
+artifact_uri: file:///D:/Bootcamp/Laskar%20AI/Submission/Eksperimen_SML_Tiani/Workflow-CI/MLProject/mlruns/0/d56e5cbd47ec42de9a3b0863d3d1b111/artifacts
+end_time: 1749883921673
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: d56e5cbd47ec42de9a3b0863d3d1b111
+run_name: bald-bee-738
+run_uuid: d56e5cbd47ec42de9a3b0863d3d1b111
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749883774129
+status: 3
+tags: []
+user_id: inait
