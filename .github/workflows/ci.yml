@@ -4,34 +4,36 @@ on:
   push:
     paths:
       - MLProject/**
+  workflow_dispatch:
 
 jobs:
   retrain:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout Repo
+        uses: actions/checkout@v4  # Wajib pakai v4 (v3 deprecated)
 
-      - name: Set up Conda
+      - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: housing-price-env
+          activate-environment: housing_env
           environment-file: MLProject/conda.yaml
           auto-activate-base: false
           use-mamba: true
 
-      - name: Install MLflow
+      - name: Install MLflow (pastikan tersedia di runner)
+        shell: bash -l {0}
         run: |
-          conda activate housing-price-env
           pip install mlflow
 
       - name: Run MLflow Project
+        shell: bash -l {0}
         run: |
           cd MLProject
           mlflow run . --no-conda
 
-      - name: Upload Model Artifact
+      - name: Upload Trained Model Artifact
         uses: actions/upload-artifact@v4
         with:
           name: trained-model
