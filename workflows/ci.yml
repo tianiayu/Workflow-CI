@@ -1,0 +1,32 @@
+name: CI Model Retraining
+
+on:
+  push:
+    paths:
+      - MLProject/**
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: housing_env
+          environment-file: MLProject/conda.yaml
+          auto-activate-base: false
+
+      - name: Run MLflow Project
+        run: |
+          cd MLProject
+          mlflow run . --no-conda
+
+      - name: Upload Model Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: trained-model
+          path: MLProject/model.joblib
