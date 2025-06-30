@@ -11,19 +11,19 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Conda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: housing_env
+          activate-environment: housing-price-env
           environment-file: MLProject/conda.yaml
           auto-activate-base: false
           use-mamba: true
 
       - name: Install MLflow
         run: |
-          conda activate housing_env
+          conda activate housing-price-env
           pip install mlflow
 
       - name: Run MLflow Project
