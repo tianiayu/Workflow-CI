@@ -95,6 +95,6 @@ for config in model_configs:
         mlflow.log_artifact(filename)
 
         # Log model ke MLflow model registry untuk build-docker
-        mlflow.sklearn.log_model(best_model, artifact_path="model", registered_model_name=None)
+        #mlflow.sklearn.log_model(best_model, artifact_path="model", registered_model_name=None)
 
         print(f" Model {name} saved and logged at: model/")
