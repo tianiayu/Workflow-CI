@@ -17,7 +17,7 @@ os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
 
 mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("HousePricePrediction")
-mlflow.sklearn.autolog(disable=True)  # disable autolog supaya manual log lebih jelas
+mlflow.sklearn.autolog(disable=True)
 
 # 2. Load Data
 train_df = pd.read_csv('train.csv')
@@ -94,7 +94,7 @@ for config in model_configs:
         joblib.dump(best_model, filename)
         mlflow.log_artifact(filename)
 
-        # Log model ke MLflow model registry untuk build-docker
-        #mlflow.sklearn.log_model(best_model, artifact_path="model", registered_model_name=None)
+        if name == "Random Forest":
+            mlflow.sklearn.log_model(best_model, artifact_path="model")
 
         print(f" Model {name} saved and logged at: model/")
