@@ -94,11 +94,11 @@ for config in model_configs:
         joblib.dump(best_model, filename)
         mlflow.log_artifact(filename)
 
-        if name == "Random Forest":
-    mlflow.sklearn.log_model(
-        best_model,
-        artifact_path="model",
-        input_example=X_test[:1]  # optional, but good practice
-    )
+        # Log model to MLflow for Docker packaging
+        mlflow.sklearn.log_model(
+            best_model,
+            artifact_path="model",
+            input_example=X_test[:1]
+        )
 
         print(f" Model {name} saved and logged at: model/")
