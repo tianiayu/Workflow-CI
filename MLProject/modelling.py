@@ -10,17 +10,16 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# 1. Autentikasi ke DagsHub (tanpa token, gunakan ENV VAR)
+# 1. Autentikasi ke DagsHub
 os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/tianiayu/Membangun_model.mlflow"
 os.environ["MLFLOW_TRACKING_USERNAME"] = "tianiayu"
 os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
 
-# 2. Set tracking URI & experiment
 mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("HousePricePrediction")
-mlflow.sklearn.autolog()
+mlflow.sklearn.autolog(disable=True)  # disable autolog supaya manual log lebih jelas
 
-# 3. Load Data
+# 2. Load Data
 train_df = pd.read_csv('train.csv')
 test_df = pd.read_csv('test.csv')
 
@@ -29,7 +28,7 @@ y_train = train_df['price']
 X_test = test_df.drop(columns='price')
 y_test = test_df['price']
 
-# 4. Model Configs
+# 3. Model Configs
 model_configs = [
     {
         "name": "Linear Regression",
@@ -54,23 +53,23 @@ model_configs = [
     }
 ]
 
-# 5. Training, Evaluation, Logging
 os.makedirs('model', exist_ok=True)
 
+# 4. Training Loop
 for config in model_configs:
     name = config["name"]
     model = config["model"]
     param_grid = config["params"]
 
-    print(f"\n🔧 Tuning {name}...")
+    print(f"\n Tuning {name}...")
 
-    with mlflow.start_run(run_name=name):
+    with mlflow.start_run(run_name=name) as run:
         if param_grid:
             grid = GridSearchCV(model, param_grid, cv=3, scoring='neg_mean_absolute_error', n_jobs=-1)
             grid.fit(X_train, y_train)
             best_model = grid.best_estimator_
-            print(f" Best Params for {name}: {grid.best_params_}")
             mlflow.log_params(grid.best_params_)
+            print(f" Best Params for {name}: {grid.best_params_}")
         else:
             model.fit(X_train, y_train)
             best_model = model
@@ -81,17 +80,21 @@ for config in model_configs:
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
         r2 = r2_score(y_test, y_pred)
 
+        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("r2", r2)
+
         print(f" Evaluation for {name}:")
         print(f"   MAE  : {mae:.2f}")
         print(f"   RMSE : {rmse:.2f}")
         print(f"   R²   : {r2:.4f}")
 
-        mlflow.log_metric("mae", mae)
-        mlflow.log_metric("rmse", rmse)
-        mlflow.log_metric("r2", r2)
-
-        # Save & log model artifact
+        # Save model locally
         filename = f"model/{name.lower().replace(' ', '_')}_tuned.joblib"
         joblib.dump(best_model, filename)
         mlflow.log_artifact(filename)
-        print(f" Saved best {name} model to {filename}")
+
+        # Log model ke MLflow model registry untuk build-docker
+        mlflow.sklearn.log_model(best_model, artifact_path="model")
+
+        print(f" Model {name} saved and logged at: model/")
