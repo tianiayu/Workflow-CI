@@ -45,7 +45,8 @@ jobs:
       id: get_run_id
       run: |
         RUN_ID=$(mlflow search-runs -n HousePricePrediction --max-results 1 -o start_time DESC --columns run_id | tail -1 | tr -d ' ')
-        echo "RUN_ID=$RUN_ID"
+        echo "Run ID: $RUN_ID"
+        echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
         echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
 
@@ -56,6 +57,7 @@ jobs:
 
     - name: Build Docker Image from MLflow
       run: |
+        echo "Using RUN_ID: ${{ steps.get_run_id.outputs.run_id }}"
         mlflow models build-docker -m "runs:/${{ steps.get_run_id.outputs.run_id }}/model" -n ciciayu/houseprice-model
 
     - name: Log in to Docker Hub
