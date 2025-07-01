@@ -4,16 +4,20 @@ import os
 import joblib
 import mlflow
 import mlflow.sklearn
-from dagshub import dagshub_logger  # penting!
-import dagshub  # inisialisasi koneksi ke DagsHub
+from dagshub import dagshub_logger
+import dagshub
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# 0. Inisialisasi koneksi DagsHub (WAJIB kalau eksperimen belum ada)
-dagshub.init(repo_owner='tianiayu', repo_name='Membangun_model', mlflow=True)
+# Autentikasi ke DagsHub
+dagshub.init(
+    repo_owner='tianiayu',
+    repo_name='Membangun_model',
+    token=os.getenv('DAGSHUB_TOKEN'),  # AMAN: token dari environment
+    mlflow=True
 
 # 1. Set tracking URI dan nama eksperimen
 mlflow.set_tracking_uri("https://dagshub.com/tianiayu/Membangun_model.mlflow")
@@ -62,7 +66,7 @@ for config in model_configs:
     model = config["model"]
     param_grid = config["params"]
 
-    print(f"\n🔧 Tuning {name}...")
+    print(f"\n Tuning {name}...")
 
     with mlflow.start_run(run_name=name):
         if param_grid:
