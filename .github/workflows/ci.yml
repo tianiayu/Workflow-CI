@@ -19,10 +19,13 @@ jobs:
       MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
 
     steps:
+    - name: Set up Job
+      run: echo "🔧 Starting CI Job..."
+
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Setup Python 3.12.7
+    - name: Set up Python 3.12.7
       uses: actions/setup-python@v5
       with:
         python-version: 3.12.7
@@ -34,33 +37,28 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install -r MLProject/requirements.txt
-        pip install dagshub mlflow
+        pip install -r MLProject/requirements.txt || true
+        pip install dagshub mlflow docker
 
-    - name: Run MLflow Project
+    - name: Run MLflow Project (modelling.py)
       working-directory: MLProject
       run: python modelling.py
 
     - name: Get Latest MLflow Run ID
       id: get_run_id
       run: |
-        RUN_ID=$(mlflow search-runs -n HousePricePrediction --max-results 1 -o start_time DESC --columns run_id | tail -1)
+        RUN_ID=$(mlflow runs list -n HousePricePrediction --order-by start_time desc | awk 'NR==2 {print $1}')
         echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
         echo "Latest Run ID: $RUN_ID"
 
-    - name: Install MLflow Extras for Build-Docker
-      run: |
-        pip install mlflow[extras]
-        pip install docker
-
-    - name: Build Docker Image from MLflow
+    - name: Build Docker Image from MLflow Run
       run: |
         mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/model" -n houseprice-model
 
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Push Docker Image to Docker Hub
+    - name: Tag and Push Docker Image
       run: |
         docker tag houseprice-model:latest ${{ secrets.DOCKER_USERNAME }}/houseprice-model:latest
         docker push ${{ secrets.DOCKER_USERNAME }}/houseprice-model:latest
@@ -70,3 +68,6 @@ jobs:
       with:
         name: trained-model
         path: MLProject/model
+
+    - name: Complete Job
+      run: echo " CI Workflow Selesai dengan Sukses!"
