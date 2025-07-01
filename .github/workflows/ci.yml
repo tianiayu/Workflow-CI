@@ -10,6 +10,9 @@ jobs:
   retrain:
     runs-on: ubuntu-latest
 
+    env:
+      DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
