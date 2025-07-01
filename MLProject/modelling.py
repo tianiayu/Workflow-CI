@@ -95,6 +95,10 @@ for config in model_configs:
         mlflow.log_artifact(filename)
 
         if name == "Random Forest":
-            mlflow.sklearn.log_model(best_model, artifact_path="model")
+    mlflow.sklearn.log_model(
+        best_model,
+        artifact_path="model",
+        input_example=X_test[:1]  # optional, but good practice
+    )
 
         print(f" Model {name} saved and logged at: model/")
