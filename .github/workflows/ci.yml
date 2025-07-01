@@ -22,40 +22,47 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Set up Python 3.12.7
+    - name: Setup Python 3.12.7
       uses: actions/setup-python@v5
       with:
         python-version: 3.12.7
 
-    - name: Check Python & Pip
+    - name: Check Python & Env
       run: |
         python --version
         pip --version
 
     - name: Install Dependencies
       run: |
-        pip install -r MLProject/requirements.txt || true
-        pip install dagshub mlflow[extras] docker joblib
+        pip install -r MLProject/requirements.txt
+        pip install dagshub mlflow
 
-    - name: Train Model & Log Artifacts
+    - name: Run MLflow Project
       working-directory: MLProject
       run: python modelling.py
 
-    - name: Prepare Docker Context
+    - name: Get Latest MLflow Run ID
+      id: get_run_id
       run: |
-        mkdir docker_context
-        cp MLProject/model/*.joblib docker_context/
-        cp Dockerfile docker_context/
+        RUN_ID=$(mlflow search-runs -n HousePricePrediction --max-results 1 -o start_time DESC --columns run_id | tail -1)
+        echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+        echo "Latest Run ID: $RUN_ID"
 
-    - name: Build Docker Image
-      run: docker build -t houseprice-model docker_context
+    - name: Install MLflow Extras for Build-Docker
+      run: |
+        pip install mlflow[extras]
+        pip install docker
+
+    - name: Build Docker Image from MLflow
+      run: |
+        mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/model" -n ciciayu/houseprice-model
 
     - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "ciciayu" --password-stdin
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Tag and Push Docker Image
+    - name: Push Docker Image to Docker Hub
       run: |
-        docker tag houseprice-model:latest ciciayu/houseprice-model:latest
+        docker tag ciciayu/houseprice-model:latest ciciayu/houseprice-model:latest
         docker push ciciayu/houseprice-model:latest
 
     - name: Upload Trained Model to GitHub Artifact
@@ -63,6 +70,3 @@ jobs:
       with:
         name: trained-model
         path: MLProject/model
-
-    - name: CI Completed
-      run: echo " CI Workflow selesai dan image berhasil di-push ke Docker Hub!"
