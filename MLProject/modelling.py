@@ -4,18 +4,23 @@ import os
 import joblib
 import mlflow
 import mlflow.sklearn
+from dagshub import dagshub_logger  # penting!
+import dagshub  # inisialisasi koneksi ke DagsHub
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# 0. MLflow DagsHub Integration
-mlflow.set_tracking_uri("https://dagshub.com/tianiayu/Membangun_model")
+# 0. Inisialisasi koneksi DagsHub (WAJIB kalau eksperimen belum ada)
+dagshub.init(repo_owner='tianiayu', repo_name='Membangun_model', mlflow=True)
+
+# 1. Set tracking URI dan nama eksperimen
+mlflow.set_tracking_uri("https://dagshub.com/tianiayu/Membangun_model.mlflow")
 mlflow.set_experiment("HousePricePrediction")
 mlflow.sklearn.autolog()
 
-# 1. Load Data
+# 2. Load Data
 train_df = pd.read_csv('train.csv')
 test_df = pd.read_csv('test.csv')
 
@@ -24,7 +29,7 @@ y_train = train_df['price']
 X_test = test_df.drop(columns='price')
 y_test = test_df['price']
 
-# 2. Define models and parameter grids
+# 3. Model Configs
 model_configs = [
     {
         "name": "Linear Regression",
@@ -49,7 +54,7 @@ model_configs = [
     }
 ]
 
-# 3. Training, Tuning, Evaluating
+# 4. Training & Logging
 os.makedirs('model', exist_ok=True)
 
 for config in model_configs:
@@ -57,7 +62,7 @@ for config in model_configs:
     model = config["model"]
     param_grid = config["params"]
 
-    print(f"\n Tuning {name}...")
+    print(f"\n🔧 Tuning {name}...")
 
     with mlflow.start_run(run_name=name):
         if param_grid:
@@ -70,23 +75,22 @@ for config in model_configs:
             model.fit(X_train, y_train)
             best_model = model
 
-        # Prediction & Evaluation
+        # Evaluasi
         y_pred = best_model.predict(X_test)
         mae = mean_absolute_error(y_test, y_pred)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
         r2 = r2_score(y_test, y_pred)
 
         print(f" Evaluation for {name}:")
-        print(f"  MAE  : {mae:.2f}")
-        print(f"  RMSE : {rmse:.2f}")
-        print(f"  R²   : {r2:.4f}")
+        print(f"   MAE  : {mae:.2f}")
+        print(f"   RMSE : {rmse:.2f}")
+        print(f"   R²   : {r2:.4f}")
 
-        # Log metrics (optional, autolog will already do this)
         mlflow.log_metric("mae", mae)
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
 
-        # Save the best model manually
+        # Simpan model
         filename = f"model/{name.lower().replace(' ', '_')}_tuned.joblib"
         joblib.dump(best_model, filename)
         mlflow.log_artifact(filename)
