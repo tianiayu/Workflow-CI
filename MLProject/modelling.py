@@ -4,8 +4,6 @@ import os
 import joblib
 import mlflow
 import mlflow.sklearn
-from dagshub import dagshub_logger
-import dagshub
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
@@ -13,17 +11,12 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # 1. Autentikasi ke DagsHub (tanpa token, gunakan ENV VAR)
+os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/tianiayu/Membangun_model.mlflow"
 os.environ["MLFLOW_TRACKING_USERNAME"] = "tianiayu"
 os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
 
-dagshub.init(
-    repo_owner='tianiayu',
-    repo_name='Membangun_model',
-    mlflow=True
-)
-
 # 2. Set tracking URI & experiment
-mlflow.set_tracking_uri("https://dagshub.com/tianiayu/Membangun_model.mlflow")
+mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("HousePricePrediction")
 mlflow.sklearn.autolog()
 
