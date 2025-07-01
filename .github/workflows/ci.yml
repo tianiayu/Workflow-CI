@@ -27,7 +27,7 @@ jobs:
       with:
         python-version: 3.12.7
 
-    - name: Check Python & Env
+    - name: Check Python & Pip
       run: |
         python --version
         pip --version
@@ -37,27 +37,26 @@ jobs:
         pip install -r MLProject/requirements.txt || true
         pip install dagshub mlflow[extras] docker joblib
 
-    - name: Run MLflow Project (modelling.py)
+    - name: Train Model & Log Artifacts
       working-directory: MLProject
       run: python modelling.py
 
-    # Skipping mlflow models build-docker – not supported
-
-    - name: Build Docker Image with Joblib Model
+    - name: Prepare Docker Context
       run: |
         mkdir docker_context
-        cp MLProject/model/* docker_context/
+        cp MLProject/model/*.joblib docker_context/
         cp Dockerfile docker_context/
 
-        docker build -t houseprice-model docker_context
+    - name: Build Docker Image
+      run: docker build -t houseprice-model docker_context
 
     - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "ciciayu" --password-stdin
 
     - name: Tag and Push Docker Image
       run: |
-        docker tag houseprice-model:latest ${{ secrets.DOCKER_USERNAME }}/houseprice-model:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/houseprice-model:latest
+        docker tag houseprice-model:latest ciciayu/houseprice-model:latest
+        docker push ciciayu/houseprice-model:latest
 
     - name: Upload Trained Model to GitHub Artifact
       uses: actions/upload-artifact@v4
@@ -65,5 +64,5 @@ jobs:
         name: trained-model
         path: MLProject/model
 
-    - name: Complete Job
-      run: echo "CI Workflow Selesai dengan Sukses!"
+    - name: CI Completed
+      run: echo " CI Workflow selesai dan image berhasil di-push ke Docker Hub!"
