@@ -89,18 +89,11 @@ for config in model_configs:
         print(f"   RMSE : {rmse:.2f}")
         print(f"   R²   : {r2:.4f}")
 
-        # Save model locally
+                # Save model locally
         filename = f"model/{name.lower().replace(' ', '_')}_tuned.joblib"
         joblib.dump(best_model, filename)
+
+        # Log model file ke Dagshub (bukan log_model)
         mlflow.log_artifact(filename)
 
-        # Log model to MLflow tanpa model registry (aman untuk Dagshub)
-        mlflow.sklearn.log_model(
-            sk_model=best_model,
-            artifact_path="model",
-            input_example=X_test[:1],
-            registered_model_name=None 
-        )
-
-
-        print(f" Model {name} saved and logged at: model/")
+        print(f" Model {name} saved and logged at: {filename}")
