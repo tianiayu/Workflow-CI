@@ -50,7 +50,7 @@ jobs:
 
     - name: Build Docker Image from MLflow Run
       run: |
-        mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/model/random_forest_tuned.joblib" -n houseprice-model
+        mlflow models build-docker -m "runs:/${{ env.RUN_ID }}/model" -n houseprice-model
 
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
