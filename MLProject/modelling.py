@@ -94,11 +94,13 @@ for config in model_configs:
         joblib.dump(best_model, filename)
         mlflow.log_artifact(filename)
 
-        # Log model to MLflow for Docker packaging
+        # Log model to MLflow tanpa model registry (aman untuk Dagshub)
         mlflow.sklearn.log_model(
-            best_model,
+            sk_model=best_model,
             artifact_path="model",
-            input_example=X_test[:1]
+            input_example=X_test[:1],
+            registered_model_name=None 
         )
+
 
         print(f" Model {name} saved and logged at: model/")
