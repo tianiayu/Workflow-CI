@@ -11,8 +11,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # === 0. MLflow DagsHub Integration ===
-mlflow.set_tracking_uri("https://dagshub.com/tianiayu/Membangun_model.mlflow")  # Ganti sesuai URL dari DagsHub
-mlflow.set_experiment("HousePricePrediction")  # Nama eksperimen di DagsHub
+mlflow.set_tracking_uri("https://dagshub.com/tianiayu/Membangun_model.mlflow")
+mlflow.set_experiment("HousePricePrediction")
 mlflow.sklearn.autolog()
 
 # 1. Load Data
