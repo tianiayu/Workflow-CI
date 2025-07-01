@@ -13,7 +13,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # 1. Autentikasi ke DagsHub (tanpa token, gunakan ENV VAR)
-os.environ["DAGSHUB_USER"] = "tianiayu"
+os.environ["MLFLOW_TRACKING_USERNAME"] = "tianiayu"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
 
 dagshub.init(
     repo_owner='tianiayu',
