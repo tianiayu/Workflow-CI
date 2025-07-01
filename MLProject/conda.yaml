@@ -1,11 +1,14 @@
 name: housing_env
 channels:
   - defaults
+  - conda-forge
 dependencies:
-  - python=3.12
+  - python=3.12.7
   - scikit-learn
   - pandas
-  - mlflow
+  - numpy
   - pip
   - pip:
       - joblib
+      - mlflow==2.19.0
+      - dagshub
