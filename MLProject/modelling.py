@@ -16,8 +16,9 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 dagshub.init(
     repo_owner='tianiayu',
     repo_name='Membangun_model',
-    token=os.getenv('DAGSHUB_TOKEN'),  # AMAN: token dari environment
+    token=os.getenv('DAGSHUB_TOKEN'),
     mlflow=True
+)
 
 # 1. Set tracking URI dan nama eksperimen
 mlflow.set_tracking_uri("https://dagshub.com/tianiayu/Membangun_model.mlflow")
