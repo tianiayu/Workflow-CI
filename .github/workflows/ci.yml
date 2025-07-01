@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: Set up Job
-      run: echo "🔧 Starting CI Job..."
+      run: echo " Starting CI Job..."
 
     - name: Checkout Repository
       uses: actions/checkout@v3
@@ -38,7 +38,7 @@ jobs:
     - name: Install Dependencies
       run: |
         pip install -r MLProject/requirements.txt || true
-        pip install dagshub mlflow docker
+        pip install dagshub mlflow[extras] docker
 
     - name: Run MLflow Project (modelling.py)
       working-directory: MLProject
