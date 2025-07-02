@@ -44,11 +44,17 @@ jobs:
     - name: Get Latest MLflow Run ID
       id: get_run_id
       run: |
-        RUN_ID=$(mlflow search-runs -n HousePricePrediction --max-results 1 -o start_time DESC --columns run_id | tail -1 | tr -d ' ')
+        echo "Fetching latest run_id..."
+        RUN_ID=$(python <<EOF
+        import mlflow 
+        runs = mlflow.search_runs(experiment_names=["HousePricePrediction"], order_by=["start_time DESC"])
+        print(runs.loc[0, "run_id"])
+        EOF
+        )
+        
         echo "Run ID: $RUN_ID"
         echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
         echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
-
 
     - name: Install MLflow Extras for Build-Docker
       run: |
