@@ -93,10 +93,10 @@ jobs:
         EOF
 
     - name: Build Docker Image
+      working-directory: MLProject
       run: |
-        MODEL_URI="runs:/${{ steps.get_run_id.outputs.run_id }}/model"
-        echo "Building Docker image for: $MODEL_URI"
-        mlflow models build-docker -m "$MODEL_URI" -n "ciciayu/houseprice-model"
+        echo "Building Docker image from local model..."
+        mlflow models build-docker -m model -n "ciciayu/houseprice-model"
 
     - name: Login to Docker Hub
       run: |
