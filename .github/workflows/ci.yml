@@ -68,6 +68,7 @@ jobs:
         EOF
 
     - name: Verify Model URI
+      working-directory: MLProject
       run: |
         echo "Verifying local model..."
 
