@@ -13,7 +13,7 @@ jobs:
   retrain-and-deploy:
     runs-on: ubuntu-latest
     env:
-      MLFLOW_TRACKING_URI: "https://dagshub.com/tianiayu/Membangun_model.mlflow"
+      MLFLOW_TRACKING_URI: "https://dagshub.com/tianiayu/Workflow-CI.mlflow"
       MLFLOW_TRACKING_USERNAME: "tianiayu"
       MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
