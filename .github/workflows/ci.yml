@@ -37,18 +37,10 @@ jobs:
       run: python modelling.py
 
     - name: Get Best MLflow Run ID
-      id: get_run_id
+      id: MLProject
       run: |
-        # Install jq if not already installed
-        sudo apt-get install -y jq
-        
-        # Get the run with lowest MAE
-        RUN_JSON=$(mlflow search-runs --experiment-name HousePricePrediction \
-                  --order-by "metrics.mae ASC" \
-                  --max-results 1 \
-                  --format json)
-        
-        RUN_ID=$(echo "$RUN_JSON" | jq -r '.runs[0].info.run_id')
+        python get_best_run.py > result.txt
+        RUN_ID=$(cat result.txt | grep "::set-output name=run_id::" | cut -d ':' -f4)
         echo "Best Run ID: $RUN_ID"
         echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
