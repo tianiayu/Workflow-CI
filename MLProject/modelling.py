@@ -4,6 +4,7 @@ import os
 import joblib
 import mlflow
 import mlflow.sklearn
+from mlflow.models import infer_signature
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
@@ -17,7 +18,7 @@ os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
 
 mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("HousePricePrediction")
-mlflow.sklearn.autolog()
+mlflow.sklearn.autolog(disable=True)  # disable karena kita log manual
 
 # 2. Load Data
 train_df = pd.read_csv('train.csv')
@@ -66,7 +67,7 @@ for config in model_configs:
         # Train model
         if config["params"]:
             grid = GridSearchCV(config["model"], config["params"], 
-                              cv=3, scoring='neg_mean_absolute_error')
+                                cv=3, scoring='neg_mean_absolute_error')
             grid.fit(X_train, y_train)
             model = grid.best_estimator_
             mlflow.log_params(grid.best_params_)
@@ -90,15 +91,19 @@ for config in model_configs:
             "r2": r2_score(y_test, y_pred)
         })
 
-        # Save and log model
-        model_path = f"model/{name}"
-        mlflow.sklearn.log_model(
+        # Save model (local & artifact)
+        model_dir = "model"
+        signature = infer_signature(X_test, y_pred)
+
+        mlflow.sklearn.save_model(
             sk_model=model,
-            artifact_path=model_path,
-            registered_model_name=f"HousePrice_{name}"
+            path=model_dir,
+            signature=signature
         )
-        
-        # Also save locally for GitHub artifact
-        joblib.dump(model, f"{model_path}.joblib")
-        
+
+        mlflow.log_artifacts(model_dir, artifact_path="model")
+
+        # Save locally for GitHub artifact
+        joblib.dump(model, f"{model_dir}_{name}.joblib")
+
 print(f"\nBest model run ID: {best_run_id}")
