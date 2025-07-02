@@ -89,7 +89,7 @@ for config in model_configs:
         print(f"   RMSE : {rmse:.2f}")
         print(f"   R²   : {r2:.4f}")
 
-                # Save model locally
+        # Save model locally
         filename = f"model/{name.lower().replace(' ', '_')}_tuned.joblib"
         joblib.dump(best_model, filename)
 
@@ -97,4 +97,4 @@ for config in model_configs:
         mlflow.sklearn.log_model(best_model, artifact_path="model")
 
 
-        print(f" Model {name} saved and logged at: {filename}")
+        print(f"Model {name} saved locally at: {filename} and logged to MLflow.")
