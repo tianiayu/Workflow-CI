@@ -69,21 +69,19 @@ jobs:
 
     - name: Verify Model URI
       run: |
-        MODEL_URI="runs:/${{ steps.get_run_id.outputs.run_id }}/model"
-        echo "Verifying model by loading and predicting..."
+        echo "Verifying local model..."
 
         python - <<EOF
-        import mlflow.pyfunc
-
-        model = mlflow.pyfunc.load_model("$MODEL_URI")
+        import joblib
         import pandas as pd
         import numpy as np
 
-        # Dummy input sesuai bentuk data kamu
-        dummy_input = pd.DataFrame([np.zeros(model.metadata.signature.inputs.shape[0])])
+        model = joblib.load("model.joblib")
 
+        dummy_input = pd.DataFrame([np.zeros(model.n_features_in_)])
         prediction = model.predict(dummy_input)
-        print(" Model loaded and prediction made successfully.")
+
+        print(" Model loaded locally and prediction succeeded:", prediction)
         EOF
 
     - name: Build Docker Image
