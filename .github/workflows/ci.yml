@@ -94,7 +94,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker pull ciciayu/houseprice-model:latest
+        docker build -t ciciayu/houseprice-model:latest .
 
     - name: Login to Docker Hub
       run: |
