@@ -102,7 +102,6 @@ jobs:
 
     - name: Push Docker Image
       run: |
-        docker tag ciciayu/houseprice-model:latest ciciayu/houseprice-model:latest
         docker push ciciayu/houseprice-model:latest
 
     - name: Upload Artifacts
