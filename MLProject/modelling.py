@@ -93,7 +93,8 @@ for config in model_configs:
         filename = f"model/{name.lower().replace(' ', '_')}_tuned.joblib"
         joblib.dump(best_model, filename)
 
-        # Log model file ke Dagshub (bukan log_model)
-        mlflow.log_artifact(filename)
+        # Log model sebagai MLflow model agar bisa di-build
+        mlflow.sklearn.log_model(best_model, artifact_path="model")
+
 
         print(f" Model {name} saved and logged at: {filename}")
