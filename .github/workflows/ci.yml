@@ -37,7 +37,8 @@ jobs:
       run: python modelling.py
 
     - name: Get Best MLflow Run ID
-      id: MLProject
+      id: get_run_id
+      working-directory: MLProject
       run: |
         python get_best_run.py > result.txt
         RUN_ID=$(cat result.txt | grep "run_id=" | cut -d '=' -f2)
