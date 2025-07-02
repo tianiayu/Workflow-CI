@@ -12,71 +12,68 @@ permissions:
 jobs:
   retrain-and-deploy:
     runs-on: ubuntu-latest
-
     env:
-      DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
-      MLFLOW_TRACKING_USERNAME: tianiayu
+      MLFLOW_TRACKING_URI: "https://dagshub.com/tianiayu/Membangun_model.mlflow"
+      MLFLOW_TRACKING_USERNAME: "tianiayu"
       MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+      DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Setup Python 3.12.7
+    - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.12.7
-
-    - name: Check Python & Env
-      run: |
-        python --version
-        pip --version
+        python-version: "3.12.7"
 
     - name: Install Dependencies
       run: |
         pip install -r MLProject/requirements.txt
-        pip install dagshub mlflow
+        pip install dagshub mlflow jq docker
 
     - name: Run MLflow Project
       working-directory: MLProject
       run: python modelling.py
 
-    - name: Get Latest MLflow Run ID
+    - name: Get Best MLflow Run ID
       id: get_run_id
       run: |
-        echo "Fetching latest run_id..."
-        RUN_ID=$(python <<EOF
-        import mlflow 
-        runs = mlflow.search_runs(experiment_names=["HousePricePrediction"], order_by=["start_time DESC"])
-        print(runs.loc[0, "run_id"])
-        EOF
-        )
+        # Install jq if not already installed
+        sudo apt-get install -y jq
         
-        echo "Run ID: $RUN_ID"
-        echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+        # Get the run with lowest MAE
+        RUN_JSON=$(mlflow search-runs --experiment-name HousePricePrediction \
+                  --order-by "metrics.mae ASC" \
+                  --max-results 1 \
+                  --format json)
+        
+        RUN_ID=$(echo "$RUN_JSON" | jq -r '.runs[0].info.run_id')
+        echo "Best Run ID: $RUN_ID"
         echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
-    - name: Install MLflow Extras for Build-Docker
-      run: |
-        pip install mlflow[extras]
-        pip install docker
-
-    - name: Build Docker Image from MLflow
+    - name: Verify Model URI
       run: |
         MODEL_URI="runs:/${{ steps.get_run_id.outputs.run_id }}/model"
-        echo "Building Docker image for model: $MODEL_URI"
-        mlflow models build-docker -m "$MODEL_URI" -n ciciayu/houseprice-model
+        echo "Verifying model at: $MODEL_URI"
+        mlflow models get-model-info -m "$MODEL_URI"
 
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-    - name: Push Docker Image to Docker Hub
+    - name: Build Docker Image
       run: |
-        docker tag ciciayu/houseprice-model:latest ciciayu/houseprice-model:latest
+        MODEL_URI="runs:/${{ steps.get_run_id.outputs.run_id }}/model"
+        echo "Building Docker image for: $MODEL_URI"
+        mlflow models build-docker -m "$MODEL_URI" -n "ciciayu/houseprice-model"
+
+    - name: Login to Docker Hub
+      run: |
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    - name: Push Docker Image
+      run: |
         docker push ciciayu/houseprice-model:latest
 
-    - name: Upload Trained Model to GitHub Artifact
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: trained-model
+        name: trained-models
         path: MLProject/model
