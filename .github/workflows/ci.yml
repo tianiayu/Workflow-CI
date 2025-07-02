@@ -58,14 +58,14 @@ jobs:
           max_results=1
         )
 
-    if runs:
-        best_run_id = runs[0].info.run_id
-        print(f"Best Run ID: {best_run_id}")
-        print(f"::set-output name=run_id::{best_run_id}")
-    else:
-        print("::error::No runs found.")
-        exit(1)
-    EOF
+        if runs:
+          best_run_id = runs[0].info.run_id
+          print(f"Best Run ID: {best_run_id}")
+          print(f"::set-output name=run_id::{best_run_id}")
+        else:
+          print("::error::No runs found.")
+          exit(1)
+        EOF
 
     - name: Verify Model URI
       run: |
