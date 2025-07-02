@@ -94,7 +94,8 @@ for config in model_configs:
         joblib.dump(best_model, filename)
 
         # Log model sebagai MLflow model agar bisa di-build
-        mlflow.sklearn.log_model(best_model, artifact_path="model", registered_model_name=None)
+        mlflow.sklearn.log_model(best_model, name="model", registered_model_name="")
 
 
-        print(f"Model {name} saved locally at: {filename} and logged to MLflow.")
+
+        print(f"Model {name} saved locally at: {filename}")
