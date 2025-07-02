@@ -4,21 +4,20 @@ import os
 import joblib
 import mlflow
 import mlflow.sklearn
-from mlflow.models import infer_signature
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# 1. Setup MLflow
+# 1. Autentikasi ke DagsHub
 os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/tianiayu/Membangun_model.mlflow"
 os.environ["MLFLOW_TRACKING_USERNAME"] = "tianiayu"
 os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
 
 mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("HousePricePrediction")
-mlflow.sklearn.autolog(disable=True)  # disable karena kita log manual
+mlflow.sklearn.autolog(disable=True)
 
 # 2. Load Data
 train_df = pd.read_csv('train.csv')
@@ -32,12 +31,12 @@ y_test = test_df['price']
 # 3. Model Configs
 model_configs = [
     {
-        "name": "Linear_Regression",
+        "name": "Linear Regression",
         "model": LinearRegression(),
         "params": {}
     },
     {
-        "name": "Random_Forest",
+        "name": "Random Forest",
         "model": RandomForestRegressor(random_state=42),
         "params": {
             "n_estimators": [50, 100],
@@ -45,7 +44,7 @@ model_configs = [
         }
     },
     {
-        "name": "Decision_Tree",
+        "name": "Decision Tree",
         "model": DecisionTreeRegressor(random_state=42),
         "params": {
             "max_depth": [5, 10, 20, None],
@@ -55,55 +54,46 @@ model_configs = [
 ]
 
 os.makedirs('model', exist_ok=True)
-best_run_id = None
-best_mae = float('inf')
 
 # 4. Training Loop
 for config in model_configs:
     name = config["name"]
-    print(f"\nTraining {name}...")
+    model = config["model"]
+    param_grid = config["params"]
+
+    print(f"\n Tuning {name}...")
 
     with mlflow.start_run(run_name=name) as run:
-        # Train model
-        if config["params"]:
-            grid = GridSearchCV(config["model"], config["params"], 
-                                cv=3, scoring='neg_mean_absolute_error')
+        if param_grid:
+            grid = GridSearchCV(model, param_grid, cv=3, scoring='neg_mean_absolute_error', n_jobs=-1)
             grid.fit(X_train, y_train)
-            model = grid.best_estimator_
+            best_model = grid.best_estimator_
             mlflow.log_params(grid.best_params_)
+            print(f" Best Params for {name}: {grid.best_params_}")
         else:
-            model = config["model"]
             model.fit(X_train, y_train)
+            best_model = model
 
-        # Evaluate
-        y_pred = model.predict(X_test)
+        # Evaluation
+        y_pred = best_model.predict(X_test)
         mae = mean_absolute_error(y_test, y_pred)
-        
-        # Track best model
-        if mae < best_mae:
-            best_mae = mae
-            best_run_id = run.info.run_id
-        
-        # Log metrics
-        mlflow.log_metrics({
-            "mae": mae,
-            "rmse": np.sqrt(mean_squared_error(y_test, y_pred)),
-            "r2": r2_score(y_test, y_pred)
-        })
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        r2 = r2_score(y_test, y_pred)
 
-        # Save model (local & artifact)
-        model_dir = "model"
-        signature = infer_signature(X_test, y_pred)
+        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("r2", r2)
 
-        mlflow.sklearn.save_model(
-            sk_model=model,
-            path=model_dir,
-            signature=signature
-        )
+        print(f" Evaluation for {name}:")
+        print(f"   MAE  : {mae:.2f}")
+        print(f"   RMSE : {rmse:.2f}")
+        print(f"   R²   : {r2:.4f}")
 
-        mlflow.log_artifacts(model_dir, artifact_path="model")
+                # Save model locally
+        filename = f"model/{name.lower().replace(' ', '_')}_tuned.joblib"
+        joblib.dump(best_model, filename)
 
-        # Save locally for GitHub artifact
-        joblib.dump(model, f"{model_dir}_{name}.joblib")
+        # Log model file ke Dagshub (bukan log_model)
+        mlflow.log_artifact(filename)
 
-print(f"\nBest model run ID: {best_run_id}")
+        print(f" Model {name} saved and logged at: {filename}")
