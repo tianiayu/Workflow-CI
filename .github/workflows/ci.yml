@@ -40,7 +40,7 @@ jobs:
       id: MLProject
       run: |
         python get_best_run.py > result.txt
-        RUN_ID=$(cat result.txt | grep "::set-output name=run_id::" | cut -d ':' -f4)
+        RUN_ID=$(cat result.txt | grep "run_id=" | cut -d '=' -f2)
         echo "Best Run ID: $RUN_ID"
         echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
