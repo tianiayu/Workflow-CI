@@ -94,7 +94,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build -t ciciayu/houseprice-model:latest .
+        docker build -t ciciayu/houseprice-model:latest -f MLProject/Dockerfile MLProject
 
     - name: Login to Docker Hub
       run: |
