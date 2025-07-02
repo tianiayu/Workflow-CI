@@ -57,8 +57,9 @@ jobs:
 
     - name: Build Docker Image from MLflow
       run: |
-        echo "Using RUN_ID: ${{ steps.get_run_id.outputs.run_id }}"
-        mlflow models build-docker -m "runs:/${{ steps.get_run_id.outputs.run_id }}/model" -n ciciayu/houseprice-model
+        MODEL_URI="runs:/${{ steps.get_run_id.outputs.run_id }}/model"
+        echo "Building Docker image for model: $MODEL_URI"
+        mlflow models build-docker -m "$MODEL_URI" -n ciciayu/houseprice-model
 
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
