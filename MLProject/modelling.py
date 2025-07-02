@@ -10,14 +10,14 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# 1. Autentikasi ke DagsHub
+# 1. Setup MLflow
 os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/tianiayu/Membangun_model.mlflow"
 os.environ["MLFLOW_TRACKING_USERNAME"] = "tianiayu"
 os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
 
 mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("HousePricePrediction")
-mlflow.sklearn.autolog(disable=True)
+mlflow.sklearn.autolog()
 
 # 2. Load Data
 train_df = pd.read_csv('train.csv')
@@ -31,12 +31,12 @@ y_test = test_df['price']
 # 3. Model Configs
 model_configs = [
     {
-        "name": "Linear Regression",
+        "name": "Linear_Regression",
         "model": LinearRegression(),
         "params": {}
     },
     {
-        "name": "Random Forest",
+        "name": "Random_Forest",
         "model": RandomForestRegressor(random_state=42),
         "params": {
             "n_estimators": [50, 100],
@@ -44,7 +44,7 @@ model_configs = [
         }
     },
     {
-        "name": "Decision Tree",
+        "name": "Decision_Tree",
         "model": DecisionTreeRegressor(random_state=42),
         "params": {
             "max_depth": [5, 10, 20, None],
@@ -54,46 +54,51 @@ model_configs = [
 ]
 
 os.makedirs('model', exist_ok=True)
+best_run_id = None
+best_mae = float('inf')
 
 # 4. Training Loop
 for config in model_configs:
     name = config["name"]
-    model = config["model"]
-    param_grid = config["params"]
-
-    print(f"\n Tuning {name}...")
+    print(f"\nTraining {name}...")
 
     with mlflow.start_run(run_name=name) as run:
-        if param_grid:
-            grid = GridSearchCV(model, param_grid, cv=3, scoring='neg_mean_absolute_error', n_jobs=-1)
+        # Train model
+        if config["params"]:
+            grid = GridSearchCV(config["model"], config["params"], 
+                              cv=3, scoring='neg_mean_absolute_error')
             grid.fit(X_train, y_train)
-            best_model = grid.best_estimator_
+            model = grid.best_estimator_
             mlflow.log_params(grid.best_params_)
-            print(f" Best Params for {name}: {grid.best_params_}")
         else:
+            model = config["model"]
             model.fit(X_train, y_train)
-            best_model = model
 
-        # Evaluation
-        y_pred = best_model.predict(X_test)
+        # Evaluate
+        y_pred = model.predict(X_test)
         mae = mean_absolute_error(y_test, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        r2 = r2_score(y_test, y_pred)
+        
+        # Track best model
+        if mae < best_mae:
+            best_mae = mae
+            best_run_id = run.info.run_id
+        
+        # Log metrics
+        mlflow.log_metrics({
+            "mae": mae,
+            "rmse": np.sqrt(mean_squared_error(y_test, y_pred)),
+            "r2": r2_score(y_test, y_pred)
+        })
 
-        mlflow.log_metric("mae", mae)
-        mlflow.log_metric("rmse", rmse)
-        mlflow.log_metric("r2", r2)
-
-        print(f" Evaluation for {name}:")
-        print(f"   MAE  : {mae:.2f}")
-        print(f"   RMSE : {rmse:.2f}")
-        print(f"   R²   : {r2:.4f}")
-
-        # Save model locally
-        filename = f"model/{name.lower().replace(' ', '_')}_tuned.joblib"
-        joblib.dump(best_model, filename)
-
-        # Log model file ke Dagshub (bukan log_model)
-        mlflow.log_artifact(filename)
-
-        print(f" Model {name} saved and logged at: {filename}")
+        # Save and log model
+        model_path = f"model/{name}"
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path=model_path,
+            registered_model_name=f"HousePrice_{name}"
+        )
+        
+        # Also save locally for GitHub artifact
+        joblib.dump(model, f"{model_path}.joblib")
+        
+print(f"\nBest model run ID: {best_run_id}")
