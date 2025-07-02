@@ -93,10 +93,8 @@ jobs:
         EOF
 
     - name: Build Docker Image
-      working-directory: MLProject
       run: |
-        echo "Building Docker image from local model..."
-        mlflow models build-docker -m model -n "ciciayu/houseprice-model"
+        docker pull ciciayu/houseprice-model:latest
 
     - name: Login to Docker Hub
       run: |
@@ -104,6 +102,7 @@ jobs:
 
     - name: Push Docker Image
       run: |
+        docker tag ciciayu/houseprice-model:latest ciciayu/houseprice-model:latest
         docker push ciciayu/houseprice-model:latest
 
     - name: Upload Artifacts
